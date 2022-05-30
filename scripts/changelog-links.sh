@@ -7,7 +7,7 @@
 # released items are presented as clickable links, but we can just use the
 # easy [GH-nnnn] shorthand for quickly adding items to the "Unrelease" section
 # while merging things between releases.
-
+echo "test"
 set -e
 
 if [[ ! -f CHANGELOG.md ]]; then
