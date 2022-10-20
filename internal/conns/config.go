@@ -58,6 +58,8 @@ type Config struct {
 	AssumeRole                     *awsbase.AssumeRole
 	AssumeRoleWithWebIdentity      *awsbase.AssumeRoleWithWebIdentity
 	CustomCABundle                 string
+	DefaultPrefix                  string
+	DefaultSuffix                  string
 	DefaultTagsConfig              *tftags.DefaultConfig
 	EC2MetadataServiceEnableState  imds.ClientEnableState
 	EC2MetadataServiceEndpoint     string
@@ -191,6 +193,8 @@ func (c *Config) ConfigureProvider(ctx context.Context, client *AWSClient) (*AWS
 
 	client.AccountID = accountID
 	client.Config = &cfg
+	client.DefaultPrefix = c.DefaultPrefix
+	client.DefaultSuffix = c.DefaultSuffix
 	client.DefaultTagsConfig = c.DefaultTagsConfig
 	client.DNSSuffix = DNSSuffix
 	client.IgnoreTagsConfig = c.IgnoreTagsConfig

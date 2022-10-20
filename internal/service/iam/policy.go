@@ -75,6 +75,16 @@ func ResourcePolicy() *schema.Resource {
 			},
 			"tags":     tftags.TagsSchema(),
 			"tags_all": tftags.TagsSchemaComputed(),
+			"prefix_all": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+			"suffix_all": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
 		},
 
 		CustomizeDiff: verify.SetTagsDiff,
@@ -84,11 +94,14 @@ func ResourcePolicy() *schema.Resource {
 func resourcePolicyCreate(d *schema.ResourceData, meta interface{}) error {
 	conn := meta.(*conns.AWSClient).IAMConn
 	defaultTagsConfig := meta.(*conns.AWSClient).DefaultTagsConfig
+	defaultPrefix := meta.(*conns.AWSClient).DefaultPrefix
+	defaultSuffix := meta.(*conns.AWSClient).DefaultSuffix
 	tags := defaultTagsConfig.MergeTags(tftags.New(d.Get("tags").(map[string]interface{})))
 
+	// name := create.Name(d.Get("name").(string), d.Get("name_prefix").(string))
 	var name string
 	if v, ok := d.GetOk("name"); ok {
-		name = v.(string)
+		name = defaultPrefix + v.(string) + defaultSuffix
 	} else if v, ok := d.GetOk("name_prefix"); ok {
 		name = resource.PrefixedUniqueId(v.(string))
 	} else {

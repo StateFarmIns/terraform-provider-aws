@@ -227,6 +227,16 @@ func New(_ context.Context) (*schema.Provider, error) {
 					"Can also be configured using the `AWS_CA_BUNDLE` environment variable. " +
 					"(Setting `ca_bundle` in the shared config file is not supported.)",
 			},
+			"default_prefix": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Prefix to include on all resource names.",
+			},
+			"default_suffix": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Suffix to include on all resource names.",
+			},
 			"default_tags": {
 				Type:        schema.TypeList,
 				Optional:    true,
@@ -2214,6 +2224,8 @@ func configure(ctx context.Context, provider *schema.Provider, d *schema.Resourc
 	config := conns.Config{
 		AccessKey:                      d.Get("access_key").(string),
 		CustomCABundle:                 d.Get("custom_ca_bundle").(string),
+		DefaultPrefix:                  d.Get("default_prefix").(string),
+		DefaultSuffix:                  d.Get("default_suffix").(string),
 		EC2MetadataServiceEndpoint:     d.Get("ec2_metadata_service_endpoint").(string),
 		EC2MetadataServiceEndpointMode: d.Get("ec2_metadata_service_endpoint_mode").(string),
 		Endpoints:                      make(map[string]string),
