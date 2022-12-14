@@ -181,7 +181,6 @@ func (c *Config) ConfigureProvider(ctx context.Context, client *AWSClient) (*AWS
 	}
 
 	client.AccountID = accountID
-	client.Config = &cfg
 	client.DefaultPrefix = c.DefaultPrefix
 	client.DefaultSuffix = c.DefaultSuffix
 	client.DefaultTagsConfig = c.DefaultTagsConfig

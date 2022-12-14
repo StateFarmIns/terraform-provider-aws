@@ -321,7 +321,6 @@ import (
 
 type AWSClient struct {
 	AccountID                 string
-	Config                    *awsv2.Config
 	DefaultPrefix             string
 	DefaultSuffix             string
 	DefaultTagsConfig         *tftags.DefaultConfig
