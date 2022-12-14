@@ -5,11 +5,9 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws/arn"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-provider-aws/internal/conns"
-	"github.com/hashicorp/terraform-provider-aws/internal/fwtypes"
+	"github.com/hashicorp/terraform-provider-aws/internal/framework"
 )
 
 func init() {
@@ -22,7 +20,7 @@ func newDataSourceBillingServiceAccount(context.Context) (datasource.DataSourceW
 }
 
 type dataSourceBillingServiceAccount struct {
-	meta *conns.AWSClient
+	framework.DataSourceWithConfigure
 }
 
 // Metadata should return the full name of the data source, such as
@@ -31,31 +29,18 @@ func (d *dataSourceBillingServiceAccount) Metadata(_ context.Context, request da
 	response.TypeName = "aws_billing_service_account"
 }
 
-// GetSchema returns the schema for this data source.
-func (d *dataSourceBillingServiceAccount) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	schema := tfsdk.Schema{
-		Attributes: map[string]tfsdk.Attribute{
-			"arn": {
-				Type:     fwtypes.ARNType,
+// Schema returns the schema for this data source.
+func (d *dataSourceBillingServiceAccount) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		Attributes: map[string]schema.Attribute{
+			"arn": schema.StringAttribute{
 				Computed: true,
 			},
-			"id": {
-				Type:     types.StringType,
+			"id": schema.StringAttribute{
 				Optional: true,
 				Computed: true,
 			},
 		},
-	}
-
-	return schema, nil
-}
-
-// Configure enables provider-level data or clients to be set in the
-// provider-defined DataSource type. It is separately executed for each
-// ReadDataSource RPC.
-func (d *dataSourceBillingServiceAccount) Configure(_ context.Context, request datasource.ConfigureRequest, response *datasource.ConfigureResponse) {
-	if v, ok := request.ProviderData.(*conns.AWSClient); ok {
-		d.meta = v
 	}
 }
 
@@ -74,19 +59,19 @@ func (d *dataSourceBillingServiceAccount) Read(ctx context.Context, request data
 	const billingAccountID = "386209384616"
 
 	arn := arn.ARN{
-		Partition: d.meta.Partition,
+		Partition: d.Meta().Partition,
 		Service:   "iam",
 		AccountID: billingAccountID,
 		Resource:  "root",
 	}
 
-	data.ARN = fwtypes.ARN{Value: arn}
-	data.ID = types.String{Value: billingAccountID}
+	data.ARN = types.StringValue(arn.String())
+	data.ID = types.StringValue(billingAccountID)
 
 	response.Diagnostics.Append(response.State.Set(ctx, &data)...)
 }
 
 type dataSourceBillingServiceAccountData struct {
-	ARN fwtypes.ARN  `tfsdk:"arn"`
+	ARN types.String `tfsdk:"arn"`
 	ID  types.String `tfsdk:"id"`
 }

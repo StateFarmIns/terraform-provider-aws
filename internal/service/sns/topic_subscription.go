@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -64,6 +65,12 @@ var (
 				return json
 			},
 		},
+		"filter_policy_scope": {
+			Type:         schema.TypeString,
+			Optional:     true,
+			Computed:     true, // When filter_policy is set, this defaults to MessageAttributes.
+			ValidateFunc: validation.StringInSlice(SubscriptionFilterPolicyScope_Values(), false),
+		},
 		"owner_id": {
 			Type:     schema.TypeString,
 			Computed: true,
@@ -108,6 +115,7 @@ var (
 		"delivery_policy":                SubscriptionAttributeNameDeliveryPolicy,
 		"endpoint":                       SubscriptionAttributeNameEndpoint,
 		"filter_policy":                  SubscriptionAttributeNameFilterPolicy,
+		"filter_policy_scope":            SubscriptionAttributeNameFilterPolicyScope,
 		"owner_id":                       SubscriptionAttributeNameOwner,
 		"pending_confirmation":           SubscriptionAttributeNamePendingConfirmation,
 		"protocol":                       SubscriptionAttributeNameProtocol,
@@ -128,6 +136,8 @@ func ResourceTopicSubscription() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			State: schema.ImportStatePassthrough,
 		},
+
+		CustomizeDiff: resourceTopicSubscriptionCustomizeDiff,
 
 		Schema: subscriptionSchema,
 	}
@@ -391,4 +401,37 @@ func normalizeTopicSubscriptionDeliveryPolicy(policy string) ([]byte, error) {
 	}
 
 	return b.Bytes(), nil
+}
+
+func resourceTopicSubscriptionCustomizeDiff(_ context.Context, diff *schema.ResourceDiff, _ interface{}) error {
+	hasPolicy := diff.Get("filter_policy").(string) != ""
+	hasScope := !diff.GetRawConfig().GetAttr("filter_policy_scope").IsNull()
+	hadScope := diff.Get("filter_policy_scope").(string) != ""
+
+	if hasPolicy && !hasScope {
+		if !hadScope {
+			// When the filter_policy_scope hasn't been read back from the API,
+			// don't attempt to set a value. Either the default will be computed
+			// on the next read, or this is a partition that doesn't support it.
+			return nil
+		}
+
+		// When the scope is removed from configuration, the API will
+		// continue reading back the last value so long as the policy
+		// itself still exists. The expected result would be to revert
+		// to the default value of the attribute (MessageAttributes).
+		return diff.SetNew("filter_policy_scope", SubscriptionFilterPolicyScopeMessageAttributes)
+	}
+
+	if !hasPolicy && !hasScope {
+		// When the policy is not set, the API silently drops the scope.
+		return diff.Clear("filter_policy_scope")
+	}
+
+	if !hasPolicy && hasScope {
+		// Make it explicit that the scope doesn't exist without a policy.
+		return errors.New("filter_policy is required when filter_policy_scope is set")
+	}
+
+	return nil
 }
